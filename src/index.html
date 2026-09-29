@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KriptoTool | Cryptography Utility</title>
+    
+    <!-- SUPPRESS LOGS -->
+    <script>
+        (function() {
+            const noop = () => {};
+            ['log', 'info', 'warn', 'debug', 'trace'].forEach(method => {
+                try {
+                    Object.defineProperty(console, method, {
+                        value: noop, writable: false, configurable: false
+                    });
+                } catch (e) {}
+            });
+        })();
+    </script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            purple: '#7c3aed',
+                            deep: '#4c1d95',
+                            green: '#10b981',
+                            darkbg: '#0a0a1a',
+                            cardbg: '#131325',
+                        }
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both',
+                        'float': 'float 8s ease-in-out infinite',
+                        'float-slow': 'float 12s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+                            '33%': { transform: 'translate(30px, -30px) scale(1.05)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.95)' },
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- PyScript -->
+    <link rel="stylesheet" href="https://pyscript.net/releases/2023.05.1/pyscript.css" />
+    <script defer src="https://pyscript.net/releases/2023.05.1/pyscript.js"></script>
+
+    <py-config>
+        [[fetch]]
+        files = ["./logika.py"]
+    </py-config>
+
+    <style>
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(124, 58, 237, 0.4); border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(124, 58, 237, 0.6); }
+        
+        py-loader, .py-error { display: none !important; }
+        py-script, py-config { display: none !important; }
+
+        .dots::after { content: ''; animation: dots 1.6s infinite steps(4); }
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #a78bfa 0%, #34d399 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glass {
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .nav-btn { position: relative; overflow: hidden; }
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, #a78bfa, #34d399);
+            transform: scaleY(0);
+            transform-origin: center;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .nav-btn.active::before { transform: scaleY(1); }
+
+        #main-header { padding-left: 5rem; transition: padding-left 0.3s ease-out; }
+        #main-header.sidebar-open { padding-left: 1.25rem; }
+        @media (min-width: 640px) {
+            #main-header { padding-left: 6.5rem; }
+            #main-header.sidebar-open { padding-left: 2rem; }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 dark:bg-brand-darkbg text-slate-900 dark:text-slate-100 font-sans h-screen overflow-hidden antialiased">
+
+    <!-- ANIMATED BACKGROUND ORBS -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-violet-600/20 dark:bg-violet-600/30 blur-3xl animate-float"></div>
+        <div class="absolute bottom-[-15%] right-[-10%] w-[600px] h-[600px] rounded-full bg-emerald-500/15 dark:bg-emerald-500/20 blur-3xl animate-float-slow"></div>
+        <div class="absolute top-[40%] left-[50%] w-[400px] h-[400px] rounded-full bg-blue-500/10 dark:bg-blue-500/15 blur-3xl animate-float" style="animation-delay: -3s"></div>
+    </div>
+
+    <!-- LOADING SCREEN -->
+    <div id="loader" class="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-violet-50 dark:from-slate-950 dark:via-brand-darkbg dark:to-violet-950 transition-opacity duration-700">
+        <div class="relative flex flex-col items-center px-6">
+            <div class="relative w-24 h-24 mb-8">
+                <div class="absolute inset-0 rounded-full border-2 border-violet-500/20"></div>
+                <div class="absolute inset-0 rounded-full border-t-2 border-violet-500 animate-spin" style="animation-duration: 1.2s"></div>
+                <div class="absolute inset-2 rounded-full border-2 border-emerald-500/20"></div>
+                <div class="absolute inset-2 rounded-full border-b-2 border-emerald-500 animate-spin" style="animation-duration: 1.8s; animation-direction: reverse"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <i data-lucide="shield-check" class="w-9 h-9 text-violet-500 dark:text-violet-400"></i>
+                </div>
+            </div>
+            
+            <h2 class="text-3xl font-bold mb-2 text-gradient tracking-tight">KriptoTool</h2>
+            <p class="text-slate-500 dark:text-slate-400 text-sm mb-6">Sedang memuat resource<span class="dots"></span></p>
+            
+            <div class="w-64 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div id="progress-fill" class="h-full bg-gradient-to-r from-violet-500 to-emerald-500 rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 transform -translate-x-full transition-transform duration-300 ease-out flex flex-col bg-white/80 dark:bg-slate-900/80 glass border-r border-slate-200 dark:border-slate-800">
+        
+        <div class="p-5 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-white"></i>
+                </div>
+                <h1 class="text-lg font-bold tracking-tight">Kripto<span class="text-gradient">Tool</span></h1>
+            </div>
+            
+            <button onclick="toggleSidebar()" 
+                class="group p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-violet-100 dark:hover:bg-violet-500/10 hover:text-violet-600 dark:hover:text-violet-400 transition-all duration-300" 
+                title="Sembunyikan Sidebar">
+                <i data-lucide="chevrons-left" class="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-0.5"></i>
+            </button>
+        </div>
+        
+        <nav class="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+            <p class="px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">Menu Utama</p>
+            
+            <button onclick="switchTab('home')" id="tab-home" class="nav-btn active w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 text-left text-sm font-medium">
+                <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>
+                <span>Dashboard</span>
+            </button>
+            
+            <p class="px-3 pt-6 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">Alat Kriptografi</p>
+            
+            <button onclick="switchTab('caesar')" id="tab-caesar" class="nav-btn w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 text-left text-sm font-medium">
+                <i data-lucide="zap" class="w-5 h-5 mr-3"></i>
+                <span>Caesar Cipher</span>
+            </button>
+            
+            <button onclick="switchTab('vigenere')" id="tab-vigenere" class="nav-btn w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 text-left text-sm font-medium">
+                <i data-lucide="key-round" class="w-5 h-5 mr-3"></i>
+                <span>Vigenère Cipher</span>
+            </button>
+            
+            <p class="px-3 pt-6 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">Informasi</p>
+            
+            <button onclick="switchTab('about')" id="tab-about" class="nav-btn w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 text-left text-sm font-medium">
+                <i data-lucide="user" class="w-5 h-5 mr-3"></i>
+                <span>About</span>
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800">
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-violet-500/10 to-emerald-500/10 border border-violet-500/20">
+                <img src="https://avatars.githubusercontent.com/u/186930288?v=4" alt="MS" class="w-8 h-8 rounded-full object-cover border border-violet-500/30">
+                <div class="min-w-0">
+                    <p class="text-xs font-semibold truncate">Megatama Setiaji</p>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">© 2026 KriptoTool</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- FLOATING OPEN BUTTON -->
+    <button id="floating-menu-btn" onclick="toggleSidebar()" 
+        class="group fixed top-4 left-4 z-50 flex items-center gap-2 pl-3 pr-3.5 py-2 
+               bg-gradient-to-br from-violet-600 via-violet-700 to-violet-800 
+               text-white rounded-xl 
+               shadow-lg shadow-violet-600/40 
+               hover:shadow-xl hover:shadow-violet-600/60 
+               hover:scale-105 active:scale-95
+               transition-all duration-300 ease-out
+               border border-white/10" 
+        title="Tampilkan Sidebar">
+        <i data-lucide="menu" class="w-4 h-4 transition-transform duration-300 group-hover:rotate-180"></i>
+        <span class="text-xs font-semibold tracking-wide">Menu</span>
+        <span class="absolute -right-0.5 -top-0.5 w-2 h-2 bg-emerald-400 rounded-full animate-pulse border-2 border-brand-darkbg"></span>
+    </button>
+
+    <!-- OVERLAY MOBILE -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-30 hidden transition-opacity duration-300"></div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main-content" class="relative z-10 ml-0 h-full flex flex-col transition-all duration-300 ease-out">
+        
+        <!-- HEADER -->
+        <header id="main-header" class="h-16 flex items-center justify-between pr-5 sm:pr-8 border-b border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/70 glass z-20">
+            <div class="flex items-center gap-2 text-sm min-w-0">
+                <i data-lucide="home" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0"></i>
+                <span id="breadcrumb-current" class="font-semibold text-slate-700 dark:text-slate-200 truncate">Dashboard</span>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+                <button onclick="toggleTheme()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-200 text-violet-600 dark:text-violet-400 hover:scale-105 active:scale-95">
+                    <i data-lucide="sun" id="icon-sun" class="w-5 h-5 hidden"></i>
+                    <i data-lucide="moon" id="icon-moon" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- PAGE CONTENT -->
+        <main class="flex-1 overflow-y-auto p-5 sm:p-8">
+            <div class="max-w-5xl mx-auto">
+
+                <!-- SECTION: HOME -->
+                <div id="section-home" class="content-section space-y-6">
+                    <div class="relative rounded-3xl p-8 md:p-12 overflow-hidden bg-gradient-to-br from-violet-600 via-violet-700 to-violet-900 shadow-2xl shadow-violet-600/20">
+                        <div class="absolute -right-20 -top-20 w-72 h-72 bg-emerald-400/20 rounded-full blur-3xl"></div>
+                        <div class="absolute -left-10 -bottom-10 w-64 h-64 bg-violet-400/20 rounded-full blur-3xl"></div>
+                        
+                        <div class="relative z-10 max-w-2xl">
+                            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur border border-white/20 mb-6">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span class="text-xs font-semibold text-white/90 tracking-wide">CLIENT-SIDE ENCRYPTION</span>
+                            </div>
+                            <h2 class="text-3xl md:text-5xl font-bold mb-4 text-white leading-tight tracking-tight">
+                                Amankan pesan Anda dengan <span class="text-emerald-300">kriptografi klasik</span>
+                            </h2>
+                            <p class="text-violet-100/90 text-base md:text-lg leading-relaxed">
+                                Aplikasi untuk enkripsi dan dekripsi menggunakan algoritma Caesar & Vigenère. Semua diproses langsung di browser Anda menjadikannya cepat dan juga private.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-5">
+                        <button onclick="switchTab('caesar')" class="group text-left bg-white dark:bg-slate-900/60 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 hover:border-violet-500/50 dark:hover:border-violet-500/50 hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300 hover:-translate-y-1">
+                            <div class="flex items-start justify-between mb-5">
+                                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center shadow-lg shadow-violet-500/30 group-hover:scale-110 transition-transform duration-300">
+                                    <i data-lucide="zap" class="w-6 h-6 text-white"></i>
+                                </div>
+                                <i data-lucide="arrow-up-right" class="w-5 h-5 text-slate-400 group-hover:text-violet-500 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300"></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2 dark:text-white">Caesar Cipher</h3>
+                            <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                Substitusi sederhana dengan pergeseran alfabet. Cocok untuk pembelajaran dasar kriptografi.
+                            </p>
+                        </button>
+
+                        <button onclick="switchTab('vigenere')" class="group text-left bg-white dark:bg-slate-900/60 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300 hover:-translate-y-1">
+                            <div class="flex items-start justify-between mb-5">
+                                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform duration-300">
+                                    <i data-lucide="key-round" class="w-6 h-6 text-white"></i>
+                                </div>
+                                <i data-lucide="arrow-up-right" class="w-5 h-5 text-slate-400 group-hover:text-emerald-500 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300"></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2 dark:text-white">Vigenère Cipher</h3>
+                            <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                Substitusi polialfabetik dengan kata kunci. Jauh lebih aman dari Caesar Cipher.
+                            </p>
+                        </button>
+                    </div>
+
+                    <div class="grid sm:grid-cols-3 gap-4">
+                        <div class="flex items-center gap-3 p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                            <div class="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
+                                <i data-lucide="shield-check" class="w-5 h-5 text-violet-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold dark:text-white">Aman</p>
+                                <p class="text-xs text-slate-500">Data tidak disimpan</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                                <i data-lucide="zap" class="w-5 h-5 text-emerald-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold dark:text-white">Cepat</p>
+                                <p class="text-xs text-slate-500">Diproses di sisi klien</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                            <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                                <i data-lucide="code" class="w-5 h-5 text-blue-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold dark:text-white">Ringan</p>
+                                <p class="text-xs text-slate-500">Dibangun dengan Python</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: CAESAR -->
+                <div id="section-caesar" class="content-section hidden">
+                    <div class="bg-white dark:bg-slate-900/60 rounded-3xl p-6 md:p-8 border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-900/5 dark:shadow-slate-950/30">
+                        <div class="flex items-center gap-4 mb-6 pb-6 border-b border-slate-200 dark:border-slate-800">
+                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                                <i data-lucide="zap" class="w-6 h-6 text-white"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold dark:text-white">Caesar Cipher</h2>
+                                <p class="text-sm text-slate-500 dark:text-slate-400">Substitusi alfabet dengan pergeseran numerik</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid lg:grid-cols-2 gap-6">
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Teks Masukan</label>
+                                        <span id="counter-caesar" class="text-xs text-slate-400">0 karakter</span>
+                                    </div>
+                                    <textarea id="text-caesar" rows="6" placeholder="Ketik pesan rahasia di sini..." oninput="updateCounter('text-caesar', 'counter-caesar')" class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-sm focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 outline-none transition-all duration-200 resize-none placeholder:text-slate-400"></textarea>
+                                </div>
+                                <div>
+                                    <label class="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-2">Kunci Pergeseran (0-25)</label>
+                                    <div class="flex items-center gap-3">
+                                        <input type="range" id="shift-range" min="0" max="25" value="3" oninput="document.getElementById('shift-caesar').value = this.value" class="flex-1 accent-violet-600">
+                                        <input type="number" id="shift-caesar" value="3" class="w-20 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-sm text-center font-mono focus:ring-2 focus:ring-violet-500/50 outline-none transition-all">
+                                    </div>
+                                </div>
+                                <div class="flex gap-3 pt-2">
+                                    <button id="btn-caesar-encrypt" class="group flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-br from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white text-sm font-bold rounded-2xl shadow-lg shadow-violet-600/30 hover:shadow-xl hover:shadow-violet-600/40 transition-all duration-200 active:scale-[0.98]">
+                                        <i data-lucide="lock" class="w-4 h-4"></i> ENKRIPSI
+                                    </button>
+                                    <button id="btn-caesar-decrypt" class="group flex-1 flex items-center justify-center gap-2 py-3.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 text-sm font-bold rounded-2xl transition-all duration-200 active:scale-[0.98]">
+                                        <i data-lucide="unlock" class="w-4 h-4"></i> DEKRIPSI
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="flex flex-col">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-sm font-semibold text-violet-600 dark:text-violet-400">Hasil</label>
+                                    <button onclick="copyOutput('output-caesar', this)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-500 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-all duration-200">
+                                        <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
+                                    </button>
+                                </div>
+                                <textarea id="output-caesar" rows="11" readonly placeholder="Hasil akan muncul di sini..." class="w-full h-full px-4 py-3 rounded-2xl border border-violet-500/30 bg-violet-50/50 dark:bg-violet-950/20 text-violet-900 dark:text-violet-200 font-mono text-sm shadow-inner focus:outline-none resize-none placeholder:text-slate-400"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: VIGENERE -->
+                <div id="section-vigenere" class="content-section hidden">
+                    <div class="bg-white dark:bg-slate-900/60 rounded-3xl p-6 md:p-8 border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-900/5 dark:shadow-slate-950/30">
+                        <div class="flex items-center gap-4 mb-6 pb-6 border-b border-slate-200 dark:border-slate-800">
+                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                                <i data-lucide="key-round" class="w-6 h-6 text-white"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold dark:text-white">Vigenère Cipher</h2>
+                                <p class="text-sm text-slate-500 dark:text-slate-400">Substitusi polialfabetik dengan kata kunci</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid lg:grid-cols-2 gap-6">
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Teks Masukan</label>
+                                        <span id="counter-vigenere" class="text-xs text-slate-400">0 karakter</span>
+                                    </div>
+                                    <textarea id="text-vigenere" rows="6" placeholder="Ketik pesan rahasia di sini..." oninput="updateCounter('text-vigenere', 'counter-vigenere')" class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-sm focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all duration-200 resize-none placeholder:text-slate-400"></textarea>
+                                </div>
+                                <div>
+                                    <label class="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-2">Kata Kunci</label>
+                                    <input type="text" id="keyword-vigenere" placeholder="Contoh: KUNCI" class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-sm uppercase tracking-wider font-mono focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all duration-200 placeholder:text-slate-400 placeholder:normal-case">
+                                </div>
+                                <div class="flex gap-3 pt-2">
+                                    <button id="btn-vigenere-encrypt" class="group flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white text-sm font-bold rounded-2xl shadow-lg shadow-emerald-600/30 hover:shadow-xl hover:shadow-emerald-600/40 transition-all duration-200 active:scale-[0.98]">
+                                        <i data-lucide="lock" class="w-4 h-4"></i> ENKRIPSI
+                                    </button>
+                                    <button id="btn-vigenere-decrypt" class="group flex-1 flex items-center justify-center gap-2 py-3.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 text-sm font-bold rounded-2xl transition-all duration-200 active:scale-[0.98]">
+                                        <i data-lucide="unlock" class="w-4 h-4"></i> DEKRIPSI
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="flex flex-col">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Hasil</label>
+                                    <button onclick="copyOutput('output-vigenere', this)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all duration-200">
+                                        <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
+                                    </button>
+                                </div>
+                                <textarea id="output-vigenere" rows="11" readonly placeholder="Hasil akan muncul di sini..." class="w-full h-full px-4 py-3 rounded-2xl border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-200 font-mono text-sm shadow-inner focus:outline-none resize-none placeholder:text-slate-400"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: ABOUT -->
+                <div id="section-about" class="content-section hidden space-y-6">
+                    <!-- Profile Hero -->
+                    <div class="relative rounded-3xl p-8 overflow-hidden bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 dark:from-slate-950 dark:via-violet-950 dark:to-slate-950 border border-slate-800">
+                        <div class="absolute -right-10 -top-10 w-64 h-64 bg-violet-500/20 rounded-full blur-3xl"></div>
+                        <div class="absolute -left-10 -bottom-10 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl"></div>
+                        
+                        <div class="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                            <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden border-4 border-white/10 shadow-2xl shrink-0">
+                                <img src="https://avatars.githubusercontent.com/u/186930288?v=4" alt="Megatama Setiaji" class="w-full h-full object-cover">
+                            </div>
+                            <div class="text-center sm:text-left flex-1">
+                                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 mb-3">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                    <span class="text-[10px] font-semibold text-emerald-300 tracking-wide">@AjiThomthom</span>
+                                </div>
+                                <h2 class="text-2xl sm:text-3xl font-bold text-white mb-2">Megatama Setiaji</h2>
+                                <p class="text-violet-200/80 text-sm mb-4">Network Engineer • SysAdmin • DevOps • Cyber Security Enthusiast</p>
+                                <div class="flex flex-wrap justify-center sm:justify-start gap-2">
+                                    <!-- GitHub (inline SVG) -->
+                                    <a href="https://github.com/ajithomthom" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-violet-600/80 hover:bg-violet-500 backdrop-blur text-white text-xs font-semibold rounded-xl border border-violet-400/30 transition-all duration-200 hover:scale-105">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                                        </svg>
+                                        GitHub
+                                    </a>
+                                    <!-- LinkedIn (inline SVG) -->
+                                    <a href="https://linkedin.com/in/megatama-setiaji" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-blue-600/80 hover:bg-blue-500 backdrop-blur text-white text-xs font-semibold rounded-xl border border-blue-400/30 transition-all duration-200 hover:scale-105">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                                        </svg>
+                                        LinkedIn
+                                    </a>
+                                    <!-- WhatsApp (inline SVG) -->
+                                    <a href="https://wa.me/6283153610195" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-emerald-600/80 hover:bg-emerald-500 backdrop-blur text-white text-xs font-semibold rounded-xl border border-emerald-400/30 transition-all duration-200 hover:scale-105">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                                        </svg>
+                                        WhatsApp
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Info Cards -->
+                    <div class="grid md:grid-cols-2 gap-5">
+                        <div class="bg-white dark:bg-slate-900/60 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
+                                    <i data-lucide="info" class="w-5 h-5 text-violet-500"></i>
+                                </div>
+                                <h3 class="text-lg font-bold dark:text-white">Tentang KriptoTool</h3>
+                            </div>
+                            <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                Aplikasi berbasis web untuk enkripsi & dekripsi pesan atau teks menggunakan algoritma kriptografi klasik. Dibangun sebagai tugas praktikum mata kuliah Kriptografi.
+                            </p>
+                            <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mt-3">
+                                Seluruh proses dijalankan <strong class="text-violet-600 dark:text-violet-400">client-side</strong> menggunakan Python. Sehingga data Anda tidak pernah meninggalkan browser menjadikannya aman dan cepat.
+                            </p>
+                        </div>
+
+                        <!-- OPEN SOURCE CARD -->
+                        <a href="https://github.com/AjiThomthom/KriptoTool" target="_blank" rel="noopener"
+                           class="group bg-white dark:bg-slate-900/60 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 hover:border-violet-500/50 dark:hover:border-violet-500/50 hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300 hover:-translate-y-1 block">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-slate-900 dark:bg-slate-800 flex items-center justify-center shadow-md">
+                                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-lg font-bold dark:text-white">Open Source</h3>
+                                </div>
+                                <i data-lucide="arrow-up-right" class="w-5 h-5 text-slate-400 group-hover:text-violet-500 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300"></i>
+                            </div>
+                            <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
+                                Seluruh kode sumber KriptoTool terbuka untuk umum. Kamu bisa mempelajari, memodifikasi, atau berkontribusi untuk pengembangan lebih lanjut.
+                            </p>
+                            <div class="flex items-center gap-2 text-xs font-semibold text-violet-600 dark:text-violet-400">
+                                <span>Lihat Repository</span>
+                                <span class="font-mono text-slate-400 dark:text-slate-500 truncate">AjiThomthom/KriptoTool</span>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- SPECIAL THANKS -->
+                    <div class="flex justify-center">
+                        <button id="btn-special-thanks" onclick="toggleSpecialThanks(this)"
+                            class="group flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white text-sm font-bold shadow-lg shadow-amber-500/30 hover:shadow-xl hover:shadow-amber-500/50 transition-all duration-300 active:scale-[0.98]">
+                            <span>Tampilkan Ucapan Terima Kasih</span>
+                        </button>
+                    </div>
+
+                    <!-- SPECIAL THANKS CARD -->
+                    <div id="special-thanks" class="hidden relative rounded-3xl p-8 overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 dark:from-amber-950/30 dark:via-orange-950/20 dark:to-yellow-950/30 border-2 border-amber-300/50 dark:border-amber-500/30 shadow-xl shadow-amber-500/10">
+                        <div class="absolute -right-10 -top-10 w-40 h-40 bg-amber-400/20 rounded-full blur-3xl"></div>
+                        <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-orange-400/20 rounded-full blur-3xl"></div>
+                        
+                        <div class="relative z-10">
+                            <div class="flex flex-col sm:flex-row items-start gap-5">
+                                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/40 shrink-0">
+                                    <i data-lucide="graduation-cap" class="w-7 h-7 text-white"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 mb-2">
+                                        <i data-lucide="sparkles" class="w-3 h-3 text-amber-600 dark:text-amber-400"></i>
+                                        <span class="text-[10px] font-bold text-amber-700 dark:text-amber-300 tracking-wider uppercase">Special Thanks</span>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-1">Terima Kasih</h3>
+                                    <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed mb-4">
+                                        Aplikasi ini tidak akan terwujud tanpa bimbingan dan ilmu yang diberikan. Terima kasih yang sebesar-besarnya kepada:
+                                    </p>
+                                    
+                                    <div class="flex items-center gap-3 p-4 rounded-2xl bg-white/70 dark:bg-slate-900/60 backdrop-blur border border-amber-200 dark:border-amber-500/20">
+                                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-md">
+                                            HR
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Bapak Hemdani Rahendra Herlianto, S.Kom., M.Kom.</p>
+                                            <p class="text-xs text-slate-600 dark:text-slate-400">Dosen Pengampu Mata Kuliah Kriptografi</p>
+                                            <p class="text-[11px] text-amber-700 dark:text-amber-400 font-semibold mt-0.5">Universitas Pelita Bangsa</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <p class="text-xs text-slate-600 dark:text-slate-400 italic mt-4 leading-relaxed">
+                                        "Terima kasih atas bimbingan & ilmu yang telah diberikan selama proses pembelajaran. Semoga ilmu yang diajarkan menjadi berkah dan bermanfaat bagi semua orang."
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- PYTHON EXECUTION -->
+    <py-script src="./logika.py"></py-script>
+
+    <script src="script.js"></script>
+</body>
+</html>
